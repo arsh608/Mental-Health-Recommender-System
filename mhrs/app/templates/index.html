@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MindPath | Find Your Sanctuary</title>
+    <meta name="description" content="AI-powered mental health content recommender. Describe how you're feeling and get personalised resources."/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Serif:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <style>
+        .font-noto-serif { font-family: 'Noto Serif', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .font-lora { font-family: 'Lora', serif; }
+        body { background-color: #0b1326; color: #dae2fd; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glow-accent { box-shadow: 0 0 40px rgba(99, 102, 241, 0.1); }
+        .is-hidden { display: none !important; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading { animation: spin 1s linear infinite; }
+    </style>
+    <script>
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-container-high": "#222a3d",
+                "on-surface": "#dae2fd",
+                "primary": "#c0c1ff",
+                "surface-container-low": "#131b2e",
+                "on-primary-fixed": "#07006c",
+                "outline": "#908fa0",
+                "on-surface-variant": "#c7c4d7",
+                "surface-container-highest": "#2d3449",
+                "secondary": "#4edea3",
+                "secondary-container": "#00a572",
+                "surface": "#0b1326",
+                "background": "#0b1326",
+                "on-background": "#dae2fd",
+                "primary-container": "#8083ff",
+                "outline-variant": "#464554",
+                "surface-container": "#171f33",
+                "surface-container-lowest": "#060e20",
+                "inverse-primary": "#494bd6"
+              },
+              spacing: {
+                "gutter": "24px",
+                "container-max": "1200px",
+                "margin-desktop": "64px"
+              },
+              fontFamily: {
+                "h1": ["Lora", "serif"],
+                "h2": ["Lora", "serif"],
+                "h3": ["Lora", "serif"],
+                "body-lg": ["Inter", "sans-serif"],
+                "body-md": ["Inter", "sans-serif"],
+                "label-sm": ["Inter", "sans-serif"]
+              },
+              fontSize: {
+                "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                "h2": ["36px", {"lineHeight": "1.3", "fontWeight": "500"}],
+                "h3": ["24px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "label-sm": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-background selection:bg-primary-container selection:text-on-primary-fixed min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-slate-950/40 backdrop-blur-xl border-b border-white/10 shadow-[0_0_30px_rgba(99,102,241,0.05)]">
+    <nav class="flex justify-between items-center w-full px-6 md:px-12 py-5 max-w-[1400px] mx-auto relative">
+        <div class="flex items-center gap-4">
+            <span class="material-symbols-outlined text-indigo-400 text-2xl" style="font-variation-settings: 'FILL' 1;">spa</span>
+            <h1 class="text-xl font-bold tracking-tight text-indigo-400 font-lora">MindPath 🌿</h1>
+        </div>
+        <div class="hidden md:flex items-center gap-2 absolute left-1/2 -translate-x-1/2" id="navTabs">
+            <button onclick="switchTab('reflect')" class="tab-btn active" data-tab="reflect">Reflect</button>
+            <button onclick="switchTab('browse')" class="tab-btn" data-tab="browse">Library</button>
+            <button onclick="switchTab('analytics')" class="tab-btn" data-tab="analytics">Analytics</button>
+            <button onclick="switchTab('about')" class="tab-btn" data-tab="about">About</button>
+        </div>
+    </nav>
+</header>
+
+<!-- Mobile tab bar -->
+<div class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-950/80 backdrop-blur-xl border-t border-white/10 flex justify-around py-2" id="mobileNav">
+    <button onclick="switchTab('reflect')" class="flex flex-col items-center gap-1 text-indigo-400 text-xs font-bold" data-tab="reflect"><span class="material-symbols-outlined text-lg">edit_note</span>Reflect</button>
+    <button onclick="switchTab('browse')" class="flex flex-col items-center gap-1 text-slate-500 text-xs" data-tab="browse"><span class="material-symbols-outlined text-lg">library_books</span>Library</button>
+    <button onclick="switchTab('analytics')" class="flex flex-col items-center gap-1 text-slate-500 text-xs" data-tab="analytics"><span class="material-symbols-outlined text-lg">monitoring</span>Stats</button>
+    <button onclick="switchTab('about')" class="flex flex-col items-center gap-1 text-slate-500 text-xs" data-tab="about"><span class="material-symbols-outlined text-lg">info</span>About</button>
+</div>
+
+<main class="pt-28 pb-32 md:pb-24 px-4 md:px-16 max-w-[1200px] mx-auto">
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: REFLECT (Recommendations) -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="page-reflect" class="tab-page active space-y-16">
+    <!-- Hero -->
+    <section class="text-center space-y-6 max-w-3xl mx-auto pt-6">
+        <h2 class="font-h1 text-h1 text-on-background">Find your sanctuary.</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+            Describe how you're feeling — our NLP engine detects your mood and recommends the most relevant mental health resources.
+        </p>
+    </section>
+
+    <!-- Input Area -->
+    <section class="space-y-10">
+        <div class="glass-card rounded-[2rem] p-8 md:p-10 glow-accent group focus-within:border-emerald-500/30 transition-all duration-500">
+            <div class="flex flex-col gap-5">
+                <div class="flex items-center gap-3 text-primary">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    <span class="font-label-sm text-label-sm uppercase tracking-[0.2em]">Write freely</span>
+                </div>
+                <textarea id="userInput" class="w-full bg-transparent border-none text-on-surface font-lora text-xl md:text-h3 focus:ring-0 placeholder:text-slate-600 min-h-[180px] resize-none outline-none" placeholder="It's been a long week, and everything feels like it's piling up at once..."></textarea>
+            </div>
+        </div>
+
+        <!-- Quick Select -->
+        <div class="space-y-6">
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="setQuickMood('anxious')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">😰 Anxious</button>
+                <button onclick="setQuickMood('stressed')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">😤 Stressed</button>
+                <button onclick="setQuickMood('sad')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">😢 Sad</button>
+                <button onclick="setQuickMood('angry')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">😠 Angry</button>
+                <button onclick="setQuickMood('lonely')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">🥺 Lonely</button>
+                <button onclick="setQuickMood('insomnia')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">🌙 Can't Sleep</button>
+                <button onclick="setQuickMood('overwhelmed')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">🌊 Overwhelmed</button>
+                <button onclick="setQuickMood('unmotivated')" class="px-5 py-2 rounded-full border border-outline/30 bg-surface-container-low text-on-surface-variant font-label-sm hover:bg-primary-container/20 hover:border-primary-container transition-all text-xs">😴 No Motivation</button>
+            </div>
+            <div class="flex justify-center">
+                <button onclick="analyzeAndRecommend()" id="analyzeBtn" class="px-10 py-4 rounded-full bg-gradient-to-r from-primary-container to-indigo-600 text-on-primary-fixed font-bold tracking-tight shadow-xl hover:shadow-primary-container/20 active:scale-95 transition-all flex items-center gap-3">
+                    <span class="material-symbols-outlined">auto_awesome</span>
+                    <span id="analyzeBtnText">Analyse & Recommend</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Loading -->
+    <div id="reflectLoading" class="is-hidden text-center py-12">
+        <span class="material-symbols-outlined text-5xl loading text-indigo-400">autorenew</span>
+        <p class="text-on-surface-variant mt-4 font-inter text-sm pulse-glow">Running NLP mood detection…</p>
+    </div>
+
+    <!-- Mood Banner (hidden until result) -->
+    <section id="moodBanner" class="is-hidden relative overflow-hidden rounded-[2rem] glass-panel p-8 flex flex-col md:flex-row items-center justify-between gap-8 border-indigo-400/20 fade-up">
+        <div class="absolute inset-0 bg-indigo-500/5 pointer-events-none"></div>
+        <div class="flex items-center gap-6 relative z-10">
+            <div>
+                <p class="text-label-sm font-label-sm text-on-surface-variant mb-1 uppercase tracking-widest">Detected Mood</p>
+                <h3 class="text-h2 font-h2 text-emerald-400" id="detectedMood">Overwhelmed</h3>
+            </div>
+        </div>
+        <div class="flex gap-8 md:gap-12 relative z-10 flex-wrap">
+            <div class="text-center">
+                <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Confidence</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" id="confidenceBar" style="width:94%"></div>
+                    </div>
+                    <span class="text-emerald-400 font-bold" id="confidencePct">94%</span>
+                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Polarity</p>
+                <span class="text-indigo-300 font-medium" id="sentimentPolarity">-0.42</span>
+            </div>
+            <div class="text-center">
+                <p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Subjectivity</p>
+                <span class="text-indigo-300 font-medium" id="sentimentSubjectivity">0.78</span>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Recommendations Grid -->
+    <section id="recsSection" class="is-hidden space-y-8 fade-up">
+        <div class="flex items-center justify-between border-b border-white/5 pb-6">
+            <h2 class="font-h2 text-h2">Personalised for you</h2>
+            <span class="text-on-surface-variant font-inter text-sm" id="recsCount"></span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="resourcesGrid"></div>
+    </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TAB 2: BROWSE LIBRARY -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="page-browse" class="tab-page space-y-10 pt-6">
+    <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <h2 class="font-h1 text-h2 text-on-background">📚 Content Library</h2>
+        <p class="text-on-surface-variant font-inter">Browse all curated mental health resources. Filter by type, difficulty, or keyword.</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass-card rounded-2xl p-6 space-y-4">
+        <div class="flex flex-wrap gap-3 items-center">
+            <span class="text-xs text-on-surface-variant font-bold uppercase tracking-widest mr-2">Type:</span>
+            <button onclick="toggleBrowseFilter('type','all')" class="filter-pill active" data-filter-group="type" data-val="all">All</button>
+            <button onclick="toggleBrowseFilter('type','article')" class="filter-pill" data-filter-group="type" data-val="article">📄 Article</button>
+            <button onclick="toggleBrowseFilter('type','video')" class="filter-pill" data-filter-group="type" data-val="video">▶ Video</button>
+            <button onclick="toggleBrowseFilter('type','exercise')" class="filter-pill" data-filter-group="type" data-val="exercise">🧘 Exercise</button>
+        </div>
+        <div class="flex flex-wrap gap-3 items-center">
+            <span class="text-xs text-on-surface-variant font-bold uppercase tracking-widest mr-2">Level:</span>
+            <button onclick="toggleBrowseFilter('difficulty','all')" class="filter-pill active" data-filter-group="difficulty" data-val="all">All</button>
+            <button onclick="toggleBrowseFilter('difficulty','beginner')" class="filter-pill" data-filter-group="difficulty" data-val="beginner">Beginner</button>
+            <button onclick="toggleBrowseFilter('difficulty','intermediate')" class="filter-pill" data-filter-group="difficulty" data-val="intermediate">Intermediate</button>
+            <button onclick="toggleBrowseFilter('difficulty','advanced')" class="filter-pill" data-filter-group="difficulty" data-val="advanced">Advanced</button>
+        </div>
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+            <input type="text" id="browseKeyword" class="search-input" placeholder="Search keywords: breathing, CBT, sleep…" oninput="debouncedBrowse()"/>
+        </div>
+    </div>
+
+    <div id="browseLoading" class="is-hidden text-center py-8"><span class="material-symbols-outlined text-3xl loading text-indigo-400">autorenew</span></div>
+    <p class="text-on-surface-variant text-sm font-inter" id="browseCount"></p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="browseGrid"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TAB 3: NLP EXPLORER -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TAB 3: ANALYTICS -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="page-analytics" class="tab-page space-y-10 pt-6">
+    <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <h2 class="font-h1 text-h2 text-on-background">📈 Session Analytics</h2>
+        <p class="text-on-surface-variant font-inter">Track your mood queries and patterns during this session.</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="analyticsStats">
+        <div class="stat-card"><div class="stat-number" id="statQueries">0</div><div class="stat-label">Queries</div></div>
+        <div class="stat-card"><div class="stat-number" id="statUniqueMoods">0</div><div class="stat-label">Unique Moods</div></div>
+        <div class="stat-card"><div class="stat-number" id="statAvgConf">—</div><div class="stat-label">Avg Confidence</div></div>
+        <div class="stat-card"><div class="stat-number" id="statTopMood">—</div><div class="stat-label">Most Detected</div></div>
+    </div>
+
+    <div id="analyticsEmpty" class="glass-card rounded-2xl p-12 text-center">
+        <span class="material-symbols-outlined text-5xl text-slate-600 mb-4">monitoring</span>
+        <p class="text-on-surface-variant font-inter">Make some queries in the Reflect tab to see analytics here.</p>
+    </div>
+
+    <div id="analyticsContent" class="is-hidden space-y-8">
+        <div class="glass-card rounded-2xl p-6">
+            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-4">Mood Distribution</h4>
+            <div id="analyticsMoodBars"></div>
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-4">Query History</h4>
+            <div class="overflow-x-auto">
+                <table class="arch-table" id="historyTable">
+                    <thead><tr><th>#</th><th>Mood</th><th>Confidence</th><th>Polarity</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TAB 5: ABOUT -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="page-about" class="tab-page space-y-10 pt-6">
+    <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <h2 class="font-h1 text-h2 text-on-background">ℹ️ About MindPath</h2>
+        <p class="text-on-surface-variant font-inter">AI-powered mental health content recommender system</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Project Details</h4>
+            <p class="text-on-surface-variant text-sm"><strong class="text-on-surface">Course:</strong> CS4053 Recommender Systems</p>
+            <p class="text-on-surface-variant text-sm"><strong class="text-on-surface">University:</strong> National University of Computer & Emerging Sciences (FAST)</p>
+            <p class="text-on-surface-variant text-sm"><strong class="text-on-surface">Instructor:</strong> Sir Syed Zain-Ul-Hassan</p>
+            <p class="text-on-surface-variant text-sm"><strong class="text-on-surface">Team:</strong> Hafsa Rashid (23K-0064) · Adina Faraz (23K-0008) · Syeda Sara Ali (23K-0070) · Arsh (23K-0078)</p>
+        </div>
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Features</h4>
+            <ul class="text-on-surface-variant text-sm space-y-2">
+                <li>Natural language mood detection → personalised recommendations</li>
+                <li>4-layer NLP ensemble (VADER, TextBlob, TF-IDF + LogReg, SentBERT)</li>
+                <li>85 curated mental health resources (articles, videos, exercises)</li>
+                <li>NLP Explorer with per-layer score transparency</li>
+                <li>Real-time session analytics and mood tracking</li>
+                <li>Weighted ranking: cosine similarity + mood tags + type preference + difficulty</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6 space-y-4">
+        <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest">NLP Pipeline Architecture</h4>
+        <div class="font-inter text-sm text-on-surface-variant space-y-2 bg-surface-container-lowest rounded-xl p-6">
+            <pre class="whitespace-pre-wrap text-xs leading-relaxed text-slate-400">
+User text
+  │
+  ▼
+┌──────────────────────────────────────────────────────────┐
+│             NLP Mood Detection Ensemble                  │
+│                                                          │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │ VADER (10%) │  │TextBlob (5%) │  │TF-IDF (40%)  │    │
+│  │  Lexicon    │  │  Polarity +  │  │ + LogReg     │    │
+│  │  sentiment  │  │ subjectivity │  │ Kaggle data  │    │
+│  └─────────────┘  └──────────────┘  └──────────────┘    │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐    │
+│  │ SentBERT Zero-Shot (45%)                         │    │
+│  │ all-MiniLM-L6-v2 → Semantic prototype matching   │    │
+│  └──────────────────────────────────────────────────┘    │
+│                                                          │
+│              Weighted Ensemble Fusion                    │
+└──────────────────────────────────────────────────────────┘
+  │
+  ▼
+Primary Mood + Confidence + Per-Layer Breakdown
+  │
+  ▼
+┌─────────────────────────────────────────────────────┐
+│  TF-IDF Content Retrieval (cosine similarity)       │
+│  Query = mood_query + user_text → top 60 candidates │
+└─────────────────────────────────────────────────────┘
+  │
+  ▼
+┌─────────────────────────────────────────────────────┐
+│  Weighted Ranker                                    │
+│  0.45 × cosine + 0.35 × tag_match                  │
+│  0.12 × type_pref + 0.08 × difficulty_match        │
+└─────────────────────────────────────────────────────┘
+  │
+  ▼
+Top-N Personalised Recommendations
+            </pre>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Dataset 1: Emotions NLP</h4>
+            <table class="arch-table">
+                <tbody>
+                    <tr><td class="font-bold text-on-surface">Source</td><td>Kaggle (praveengovi)</td></tr>
+                    <tr><td class="font-bold text-on-surface">Samples</td><td>~20,000 labelled sentences</td></tr>
+                    <tr><td class="font-bold text-on-surface">Classes</td><td>joy, sadness, anger, fear, love, surprise</td></tr>
+                    <tr><td class="font-bold text-on-surface">Use</td><td>Training TF-IDF + LogReg mood classifier</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <h4 class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Dataset 2: Counseling Conversations</h4>
+            <table class="arch-table">
+                <tbody>
+                    <tr><td class="font-bold text-on-surface">Source</td><td>Kaggle (melissamonfared)</td></tr>
+                    <tr><td class="font-bold text-on-surface">Content</td><td>Real anonymised therapist Q&A pairs</td></tr>
+                    <tr><td class="font-bold text-on-surface">Format</td><td>CSV (questionText, answerText)</td></tr>
+                    <tr><td class="font-bold text-on-surface">Use</td><td>Extends training data with real mental health language</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-white/5 py-10 px-6 md:px-16 bg-surface-container-lowest">
+    <div class="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex items-center gap-3 opacity-60">
+            <span class="material-symbols-outlined text-indigo-400" style="font-variation-settings: 'FILL' 1;">spa</span>
+            <span class="font-lora text-lg font-bold">MindPath</span>
+        </div>
+        <div class="flex gap-10">
+            <a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm uppercase tracking-widest text-[10px]" href="#">Privacy</a>
+            <a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm uppercase tracking-widest text-[10px]" href="#">Ethics</a>
+            <a class="text-on-surface-variant hover:text-primary transition-colors font-label-sm uppercase tracking-widest text-[10px]" href="#">Support</a>
+        </div>
+        <p class="text-on-surface-variant font-label-sm text-[10px] opacity-40">© 2026 MindPath</p>
+    </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   GLOBALS
+   ═══════════════════════════════════════════════════════════════ */
+const MOOD_DISPLAY = {
+    anxiety:"Anxious / Worried", stress:"Stressed / Burned Out", sadness:"Sad / Depressed",
+    anger:"Frustrated / Angry", low_motivation:"Low Motivation", loneliness:"Lonely / Isolated",
+    insomnia:"Sleep Problems", overwhelmed:"Overwhelmed", low_self_esteem:"Low Self-Esteem",
+    positive:"Doing Well"
+};
+
+const MOOD_COLOR = {
+    anxiety:"#7F77DD", stress:"#E8593C", sadness:"#378ADD", anger:"#D85A30",
+    low_motivation:"#639922", loneliness:"#1D9E75", insomnia:"#534AB7",
+    overwhelmed:"#D4537E", low_self_esteem:"#185FA5", positive:"#3B6D11"
+};
+const LAYER_COLORS = { vader:"#E8593C", textblob:"#D85A30", tfidf:"#7F77DD", sentbert:"#1D9E75" };
+const LAYER_WEIGHTS = { vader:"10%", textblob:"5%", tfidf:"40%", sentbert:"45%" };
+
+const QUICK_TEXTS = {
+    anxious: "I have been feeling extremely anxious lately. My mind races with worrying thoughts that I cannot control and I feel on edge all the time.",
+    stressed: "I am completely stressed and burned out from work. There is too much pressure and I cannot cope with all the demands on me.",
+    sad: "I feel deeply sad and hopeless. Things feel pointless and nothing brings me joy anymore. I have lost motivation for everything.",
+    angry: "I feel intensely frustrated and angry. Everything feels unfair and I keep snapping at people around me.",
+    lonely: "I feel completely alone and isolated. No one seems to understand me and I feel deeply disconnected from everyone.",
+    insomnia: "I cannot sleep at all. I lie awake for hours with my mind racing and wake up exhausted every single morning.",
+    overwhelmed: "Everything is too much and I am at my breaking point. I feel like I am drowning and cannot handle any more.",
+    unmotivated: "I have absolutely no motivation and keep procrastinating on everything that matters. I feel stuck and cannot get started on anything."
+};
+
+let sessionHistory = JSON.parse(sessionStorage.getItem('mindpath_history') || '[]');
+let browseFilters = { type: 'all', difficulty: 'all' };
+let browseDebounce = null;
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#mobileNav button').forEach(b => { b.classList.remove('text-indigo-400','font-bold'); b.classList.add('text-slate-500'); });
+
+    document.getElementById('page-' + tabId).classList.add('active');
+    document.querySelectorAll(`.tab-btn[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
+    const mb = document.querySelector(`#mobileNav button[data-tab="${tabId}"]`);
+    if (mb) { mb.classList.add('text-indigo-400','font-bold'); mb.classList.remove('text-slate-500'); }
+
+    if (tabId === 'browse') loadBrowse();
+    if (tabId === 'analytics') renderAnalytics();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REFLECT TAB — ANALYSE & RECOMMEND
+   ═══════════════════════════════════════════════════════════════ */
+function setQuickMood(key) {
+    document.getElementById('userInput').value = QUICK_TEXTS[key] || key;
+}
+
+async function analyzeAndRecommend() {
+    const text = document.getElementById('userInput').value.trim();
+    if (!text) { alert("Please describe how you're feeling first."); return; }
+
+    const btn = document.getElementById('analyzeBtn');
+    const btnText = document.getElementById('analyzeBtnText');
+    btn.disabled = true; btnText.textContent = 'Analysing…';
+    document.getElementById('reflectLoading').classList.remove('is-hidden');
+    document.getElementById('moodBanner').classList.add('is-hidden');
+    document.getElementById('recsSection').classList.add('is-hidden');
+
+    try {
+        const res = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Analysis failed');
+        displayReflectResults(data);
+    } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+    } finally {
+        btn.disabled = false; btnText.textContent = 'Analyse & Recommend';
+        document.getElementById('reflectLoading').classList.add('is-hidden');
+    }
+}
+
+function displayReflectResults(data) {
+    const mr = data.mood_result;
+    const recs = data.recommendations || [];
+    const mood = mr.primary_mood;
+    const color = mr.color || MOOD_COLOR[mood] || '#6b7280';
+
+    // Save to session history
+    sessionHistory.push({ mood, display: mr.display_mood, emoji: mr.emoji, confidence: mr.confidence, sentiment: mr.sentiment });
+    sessionStorage.setItem('mindpath_history', JSON.stringify(sessionHistory));
+
+    // Mood banner
+    document.getElementById('detectedMood').textContent = mr.display_mood || MOOD_DISPLAY[mood] || mood;
+    document.getElementById('detectedMood').style.color = color;
+    document.getElementById('confidencePct').textContent = Math.round(mr.confidence * 100) + '%';
+    document.getElementById('confidenceBar').style.width = (mr.confidence * 100) + '%';
+    document.getElementById('sentimentPolarity').textContent = (mr.sentiment?.polarity ?? 0).toFixed(2);
+    document.getElementById('sentimentSubjectivity').textContent = (mr.sentiment?.subjectivity ?? 0).toFixed(2);
+    document.getElementById('moodBanner').classList.remove('is-hidden');
+
+    // Mood score bars
+    const allScores = mr.all_scores || {};
+    const sorted = Object.entries(allScores).sort((a,b) => b[1] - a[1]);
+    let barsHtml = '';
+    for (const [m, s] of sorted) {
+        const c = MOOD_COLOR[m] || '#6b7280';
+        barsHtml += `<div class="mood-bar-row">
+            <span class="mood-bar-label">${MOOD_DISPLAY[m]||m}</span>
+            <div class="mood-bar-track"><div class="mood-bar-fill" style="width:${(s*100).toFixed(0)}%;background:${c}"></div></div>
+            <span class="mood-bar-value">${(s*100).toFixed(1)}%</span>
+        </div>`;
+    }
+
+    // Recommendations
+    const grid = document.getElementById('resourcesGrid');
+    grid.innerHTML = '';
+    recs.forEach((rec, i) => grid.appendChild(createCard(rec, i)));
+    document.getElementById('recsCount').textContent = recs.length + ' resources';
+    document.getElementById('recsSection').classList.remove('is-hidden');
+
+    setTimeout(() => document.getElementById('moodBanner').scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+}
+
+function createCard(rec, idx) {
+    const div = document.createElement('div');
+    div.className = 'glass-card rounded-3xl p-1 flex flex-col group hover:-translate-y-2 transition-all duration-300 fade-up';
+    div.style.animationDelay = (idx * 60) + 'ms';
+    const type = rec.content_type || 'Article';
+    const score = Math.round((rec.final_score || rec.tfidf_score || 0.5) * 100);
+    const link = rec.link || '#';
+    const tags = (rec.tags || '').replace(/,/g, ' · ');
+    const typeColors = { article:'text-indigo-400', video:'text-amber-400', exercise:'text-emerald-400' };
+    const typeIcons = { article:'📄', video:'▶', exercise:'🧘' };
+    const imgUrls = {
+        exercise: '/static/meditation.png',
+        video: '/static/meditation.png',
+        article: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&h=300&fit=crop',
+        youtube: '/static/meditation.png'
+    };
+    let typeKey = type.toLowerCase();
+    if (link.includes('youtube.com') || link.includes('youtu.be')) typeKey = 'youtube';
+    
+    div.innerHTML = `
+        <div class="relative h-44 rounded-2xl overflow-hidden mb-5 bg-gradient-to-br from-indigo-600/30 to-emerald-600/30">
+            <img class="w-full h-full object-contain opacity-70" src="${imgUrls[typeKey] || imgUrls.article}" alt="${rec.title}" onerror="this.style.display='none'" />
+            <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                <span class="text-[10px] font-bold ${typeColors[type.toLowerCase()]||'text-indigo-400'} uppercase tracking-widest">${typeIcons[type.toLowerCase()]||'•'} ${type}</span>
+            </div>
+            <div class="absolute bottom-3 right-3 bg-emerald-500/20 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-400/30">
+                <span class="text-xs font-bold text-emerald-300">${score}% Match</span>
+            </div>
+        </div>
+        <div class="px-5 pb-6 space-y-3 flex-1 flex flex-col">
+            <h4 class="font-lora text-lg text-on-surface font-medium leading-snug">${rec.title || 'Untitled Resource'}</h4>
+            <p class="text-on-surface-variant text-sm line-clamp-3 flex-1">${rec.description || ''}</p>
+            <div class="text-xs text-slate-500">⏱ ${rec.duration||'—'} · 📶 ${(rec.difficulty||'').charAt(0).toUpperCase()+(rec.difficulty||'').slice(1)} · 🏷 ${tags}</div>
+            <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-primary font-bold text-sm group-hover:gap-3 transition-all mt-1">
+                Open Resource <span class="material-symbols-outlined text-sm">open_in_new</span>
+            </a>
+        </div>`;
+    return div;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BROWSE TAB
+   ═══════════════════════════════════════════════════════════════ */
+function toggleBrowseFilter(group, val) {
+    browseFilters[group] = val;
+    document.querySelectorAll(`[data-filter-group="${group}"]`).forEach(b => {
+        b.classList.toggle('active', b.dataset.val === val);
+    });
+    loadBrowse();
+}
+
+function debouncedBrowse() {
+    clearTimeout(browseDebounce);
+    browseDebounce = setTimeout(loadBrowse, 400);
+}
+
+async function loadBrowse() {
+    const keyword = document.getElementById('browseKeyword')?.value?.trim() || '';
+    const params = new URLSearchParams();
+    if (browseFilters.type !== 'all') params.set('type', browseFilters.type);
+    if (browseFilters.difficulty !== 'all') params.set('difficulty', browseFilters.difficulty);
+    if (keyword) params.set('keyword', keyword);
+
+    document.getElementById('browseLoading').classList.remove('is-hidden');
+    document.getElementById('browseGrid').innerHTML = '';
+    try {
+        const res = await fetch('/api/browse?' + params.toString());
+        const data = await res.json();
+        document.getElementById('browseCount').textContent = data.count + ' items';
+        const grid = document.getElementById('browseGrid');
+        (data.items || []).forEach((item, i) => {
+            grid.appendChild(createCard({
+                title: item.title, description: item.description, content_type: item.content_type,
+                final_score: 0, link: item.link, tags: item.tags, difficulty: item.difficulty, duration: item.duration
+            }, i));
+        });
+    } catch (e) { console.error(e); }
+    document.getElementById('browseLoading').classList.add('is-hidden');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ANALYTICS TAB
+   ═══════════════════════════════════════════════════════════════ */
+function renderAnalytics() {
+    const h = sessionHistory;
+    document.getElementById('statQueries').textContent = h.length;
+    const uniqueMoods = [...new Set(h.map(x => x.mood))];
+    document.getElementById('statUniqueMoods').textContent = uniqueMoods.length;
+
+    if (h.length === 0) {
+        document.getElementById('analyticsEmpty').classList.remove('is-hidden');
+        document.getElementById('analyticsContent').classList.add('is-hidden');
+        document.getElementById('statAvgConf').textContent = '—';
+        document.getElementById('statTopMood').textContent = '—';
+        return;
+    }
+
+    document.getElementById('analyticsEmpty').classList.add('is-hidden');
+    document.getElementById('analyticsContent').classList.remove('is-hidden');
+
+    const avgConf = h.reduce((s,x) => s + x.confidence, 0) / h.length;
+    document.getElementById('statAvgConf').textContent = Math.round(avgConf * 100) + '%';
+
+    const moodCounts = {};
+    h.forEach(x => { moodCounts[x.mood] = (moodCounts[x.mood]||0) + 1; });
+    const topMood = Object.entries(moodCounts).sort((a,b) => b[1] - a[1])[0];
+    document.getElementById('statTopMood').textContent = (MOOD_DISPLAY[topMood[0]]||topMood[0]);
+
+    // Mood distribution bars
+    const sortedMoods = Object.entries(moodCounts).sort((a,b) => b[1] - a[1]);
+    const maxCount = sortedMoods[0][1];
+    let barsHtml = '';
+    for (const [m, cnt] of sortedMoods) {
+        barsHtml += `<div class="mood-bar-row">
+            <span class="mood-bar-label">${MOOD_DISPLAY[m]||m}</span>
+            <div class="mood-bar-track"><div class="mood-bar-fill" style="width:${(cnt/maxCount*100).toFixed(0)}%;background:${MOOD_COLOR[m]||'#6b7280'}"></div></div>
+            <span class="mood-bar-value">${cnt}</span>
+        </div>`;
+    }
+    document.getElementById('analyticsMoodBars').innerHTML = barsHtml;
+
+    // History table
+    let rows = '';
+    h.forEach((x, i) => {
+        rows += `<tr>
+            <td>${i+1}</td>
+            <td>${x.display||MOOD_DISPLAY[x.mood]||x.mood}</td>
+            <td>${Math.round(x.confidence*100)}%</td>
+            <td>${(x.sentiment?.polarity??0).toFixed(2)}</td>
+        </tr>`;
+    });
+    document.getElementById('historyBody').innerHTML = rows;
+}
+</script>
+</body>
+</html>

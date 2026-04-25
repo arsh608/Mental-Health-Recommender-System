@@ -1,0 +1,259 @@
+/* ── MindPath Shared Styles ──────────────────────────────────── */
+
+/* Tab Navigation */
+.tab-btn {
+    position: relative;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.tab-btn:hover {
+    color: #c0c1ff;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.tab-btn.active {
+    color: #c0c1ff;
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.08);
+}
+
+.tab-page { display: none; }
+.tab-page.active { display: block; }
+
+/* Score Bars */
+.score-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.score-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease;
+}
+
+/* NLP Layer Bars */
+.layer-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.layer-label {
+    width: 140px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.layer-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.layer-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    min-width: 3px;
+}
+
+.layer-value {
+    width: 50px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-align: right;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Mood Score Horizontal Bars */
+.mood-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.mood-bar-label {
+    width: 160px;
+    font-size: 0.8rem;
+    color: #c7c4d7;
+    flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mood-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.mood-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+    min-width: 2px;
+}
+
+.mood-bar-value {
+    width: 55px;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    text-align: right;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Pulse animation for loading */
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+.pulse-glow { animation: pulse-glow 1.5s ease-in-out infinite; }
+
+/* Fade-in animation */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+    animation: fadeUp 0.4s ease forwards;
+    opacity: 0;
+}
+
+/* Filter pills */
+.filter-pill {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    background: rgba(19, 27, 46, 0.8);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.filter-pill:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #c0c1ff;
+}
+
+.filter-pill.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #c0c1ff;
+}
+
+/* Search input */
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    background: rgba(19, 27, 46, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #dae2fd;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.search-input::placeholder {
+    color: #475569;
+}
+
+/* Analytics stat card */
+.stat-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'Lora', serif;
+    color: #c0c1ff;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+}
+
+/* Architecture diagram table */
+.arch-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+}
+
+.arch-table th {
+    background: rgba(99, 102, 241, 0.12);
+    color: #c0c1ff;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+}
+
+.arch-table th:first-child { border-radius: 12px 0 0 0; }
+.arch-table th:last-child { border-radius: 0 12px 0 0; }
+
+.arch-table td {
+    padding: 0.65rem 1rem;
+    color: #c7c4d7;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.arch-table tr:last-child td { border-bottom: none; }
+.arch-table tr:last-child td:first-child { border-radius: 0 0 0 12px; }
+.arch-table tr:last-child td:last-child { border-radius: 0 0 12px 0; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
