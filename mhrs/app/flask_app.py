@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 import logging
+import threading
+import time
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -21,11 +23,24 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Start loading models in the background so the server boots instantly
-import threading
-logger.info("Starting background thread to load models...")
-threading.Thread(target=load_all, daemon=True).start()
-logger.info("Server starting up...")
+# Global flag to track if models are loaded
+models_loaded = False
+
+def load_models():
+    """Load all models and set flag when done"""
+    global models_loaded
+    logger.info("Starting to load models...")
+    try:
+        load_all()
+        models_loaded = True
+        logger.info("All models loaded successfully!")
+    except Exception as e:
+        logger.error(f"Error loading models: {str(e)}")
+        models_loaded = False
+
+# Start loading models in background
+threading.Thread(target=load_models, daemon=True).start()
+logger.info("Server starting up, models loading in background...")
 
 
 @app.route('/')
@@ -40,6 +55,15 @@ def analyze():
     Analyze mood and get recommendations.
     Returns full mood result + ranked recommendations.
     """
+    global models_loaded
+    
+    # Check if models are ready
+    if not models_loaded:
+        return jsonify({
+            "error": "Models are still loading. Please wait 10-15 seconds and try again.",
+            "loading": True
+        }), 503  # Service Unavailable
+    
     try:
         data = request.get_json()
         user_text = data.get('text', '').strip()
@@ -99,13 +123,15 @@ def analyze():
 
 @app.route('/api/browse', methods=['GET'])
 def browse():
-    """
-    Return full content library with optional filters.
-    Query params: type, difficulty, keyword
-    """
+    """Return full content library with optional filters."""
+    global models_loaded
+    
+    if not models_loaded:
+        return jsonify({"error": "Models are still loading. Please wait.", "loading": True}), 503
+    
     try:
         all_content = get_all_content()
-
+        # ... rest of your browse code (keep as is)
         type_filter = request.args.get('type', '').strip().lower()
         diff_filter = request.args.get('difficulty', '').strip().lower()
         keyword = request.args.get('keyword', '').strip().lower()
@@ -146,9 +172,12 @@ def browse():
 
 @app.route('/api/nlp-explore', methods=['POST'])
 def nlp_explore():
-    """
-    Run NLP mood detection on text and return full per-layer breakdown.
-    """
+    """Run NLP mood detection on text and return full per-layer breakdown."""
+    global models_loaded
+    
+    if not models_loaded:
+        return jsonify({"error": "Models are still loading. Please wait.", "loading": True}), 503
+    
     try:
         data = request.get_json()
         user_text = data.get('text', '').strip()
@@ -181,10 +210,16 @@ def nlp_explore():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/api/status', methods=['GET'])
+def status():
+    """Check if models are loaded"""
+    return jsonify({"models_loaded": models_loaded})
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "ok", "models_loaded": models_loaded})
 
 
 if __name__ == '__main__':
