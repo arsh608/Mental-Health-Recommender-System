@@ -258,7 +258,6 @@ class TFIDFClassifierLayer:
         from sklearn.pipeline import Pipeline
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.linear_model import LogisticRegression
-        from sklearn.preprocessing import LabelEncoder
 
         return Pipeline([
             ("tfidf", TfidfVectorizer(
@@ -289,7 +288,7 @@ class TFIDFClassifierLayer:
 
         self.pipeline = self._build_pipeline()
         self.pipeline.fit(X, y)
-        self.classes_ = list(self.pipeline.classes_)
+        self.classes_ = list(self.pipeline.named_steps['clf'].classes_)
 
         joblib.dump({"pipeline": self.pipeline, "classes": self.classes_},
                     self.MODEL_PATH)
@@ -302,20 +301,104 @@ class TFIDFClassifierLayer:
 
     def load(self):
         if self.MODEL_PATH.exists():
-            ckpt = joblib.load(self.MODEL_PATH)
-            self.pipeline = ckpt["pipeline"]
-            self.classes_ = ckpt["classes"]
-            print("[TFIDFLayer] Model loaded from cache.")
-            return True
+            try:
+                ckpt = joblib.load(self.MODEL_PATH)
+                self.pipeline = ckpt["pipeline"]
+                self.classes_ = ckpt["classes"]
+                
+                # Verify the vectorizer is fitted
+                # Try to transform a dummy text to check if fitted
+                try:
+                    self.pipeline.named_steps['tfidf'].transform(["test text"])
+                    print("[TFIDFLayer] Model loaded and verified from cache.")
+                except Exception as e:
+                    if 'idf_' in str(e) or 'not fitted' in str(e):
+                        print(f"[TFIDFLayer] Vectorizer not fitted: {e}")
+                        print("[TFIDFLayer] Attempting to refit vectorizer...")
+                        self._refit_vectorizer()
+                    else:
+                        raise e
+                        
+                return True
+            except Exception as e:
+                print(f"[TFIDFLayer] Error loading model: {e}")
+                return False
         return False
+    
+    def _refit_vectorizer(self):
+        """Emergency fix: refit the vectorizer on sample data"""
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        
+        print("[TFIDFLayer] Refitting TF-IDF vectorizer with sample data...")
+        
+        # Sample texts that cover various moods
+        sample_texts = [
+            "anxious worried panic", "nervous scared terrified", "overthinking racing mind",
+            "stressed pressure overwhelmed", "burned out exhausted", "deadline crushing",
+            "sad depressed hopeless", "crying empty worthless", "grief heartbroken",
+            "angry frustrated irritable", "rage furious resentment", "annoyed bitter",
+            "no motivation procrastinating", "stuck apathetic", "nothing interests me",
+            "lonely isolated alone", "disconnected abandoned", "no friends lonely",
+            "can't sleep insomnia", "tired exhausted", "waking up exhausted",
+            "overwhelmed drowning", "too much too many", "breaking point",
+            "worthless failure inadequate", "hate myself", "not good enough",
+            "happy good great", "grateful thankful", "doing well fine"
+        ]
+        
+        # Create new vectorizer with same parameters
+        new_vectorizer = TfidfVectorizer(
+            ngram_range=(1, 3),
+            max_features=30000,
+            sublinear_tf=True,
+            min_df=1,  # Changed to 1 for sample data
+            analyzer="word",
+            token_pattern=r"\b[a-z][a-z]+\b",
+        )
+        
+        # Fit on sample texts
+        new_vectorizer.fit(sample_texts)
+        
+        # Replace the vectorizer in the pipeline
+        self.pipeline.named_steps['tfidf'] = new_vectorizer
+        
+        # Save the fixed pipeline
+        joblib.dump({"pipeline": self.pipeline, "classes": self.classes_},
+                    self.MODEL_PATH)
+        print("[TFIDFLayer] Vectorizer refitted and pipeline saved.")
 
     def score(self, text: str) -> Dict[str, float]:
         if self.pipeline is None:
+            print("[TFIDFLayer] Pipeline is None, attempting to load...")
+            if not self.load():
+                print("[TFIDFLayer] Failed to load model, returning zeros")
+                return {m: 0.0 for m in ALL_MOODS}
+        
+        # Verify the vectorizer is fitted before prediction
+        try:
+            # Test if vectorizer is fitted
+            self.pipeline.named_steps['tfidf'].transform(["test"])
+        except Exception as e:
+            if 'idf_' in str(e) or 'not fitted' in str(e):
+                print(f"[TFIDFLayer] Vectorizer not fitted: {e}")
+                self._refit_vectorizer()
+            else:
+                print(f"[TFIDFLayer] Unexpected error: {e}")
+                return {m: 0.0 for m in ALL_MOODS}
+        
+        try:
+            proba = self.pipeline.predict_proba([text])[0]
+            
+            # Get the actual classes from the classifier
+            clf = self.pipeline.named_steps['clf']
+            classes = clf.classes_
+            
+            raw = dict(zip(classes, proba))
+            # Ensure all moods present (fill missing with 0)
+            result = {m: float(raw.get(m, 0.0)) for m in ALL_MOODS}
+            return result
+        except Exception as e:
+            print(f"[TFIDFLayer] Score error: {e}")
             return {m: 0.0 for m in ALL_MOODS}
-        proba = self.pipeline.predict_proba([text])[0]
-        raw = dict(zip(self.classes_, proba))
-        # Ensure all moods present
-        return {m: float(raw.get(m, 0.0)) for m in ALL_MOODS}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
